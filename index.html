@@ -263,22 +263,22 @@
 
     <div class="stat-card">
         <div class="stat-label">Total Reach</div>
-        <div class="stat-value">7,271,613</div>
+        <div class="stat-value" id="total-impressions">0</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-label">Total Reactions</div>
-        <div class="stat-value">116,383</div>
+        <div class="stat-value" id="total-reactions">0</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-label">Total Engagement</div>
-        <div class="stat-value">127,439</div>
+        <div class="stat-value" id="total-engagements">0</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-label">Avg. Engagement Rate</div>
-        <div class="stat-value">1.96%</div>
+        <div class="stat-value" id="avg-rate">0%</div>
     </div>
 
 </div>
@@ -395,12 +395,50 @@ Caption,Type,Impressions,Reactions,Comments,Shares,Engagement Rate,Publish Date,
             });
 
 // Key Stats
-const totalImpressions = 7271613;
-const totalReactions = 116383;
-const totalComments = 0;
-const totalShares = 0;
-const totalEngagements = 127439;
-const avgRate = 1.96;
+// Key Stats
+
+const totalImpressions =
+data.reduce((sum, row) =>
+sum + (row.Impressions || 0), 0);
+
+const totalReactions =
+data.reduce((sum, row) =>
+sum + (row.Reactions || 0), 0);
+
+const totalComments =
+data.reduce((sum, row) =>
+sum + (row.Comments || 0), 0);
+
+const totalShares =
+data.reduce((sum, row) =>
+sum + (row.Shares || 0), 0);
+
+const totalEngagements =
+totalReactions + totalComments + totalShares;
+
+
+// Average ER from dataset
+const avgRate =
+(
+data.reduce((sum, row) =>
+sum + (row['Engagement Rate'] || 0), 0)
+/
+data.length
+) * 100;
+
+
+// KPI Cards
+document.getElementById('total-impressions').textContent =
+totalImpressions.toLocaleString();
+
+document.getElementById('total-reactions').textContent =
+totalReactions.toLocaleString();
+
+document.getElementById('total-engagements').textContent =
+totalEngagements.toLocaleString();
+
+document.getElementById('avg-rate').textContent =
+avgRate.toFixed(2) + '%';
 
             document.getElementById('total-impressions').textContent = totalImpressions.toLocaleString();
             document.getElementById('total-engagements').textContent = totalEngagements.toLocaleString();
