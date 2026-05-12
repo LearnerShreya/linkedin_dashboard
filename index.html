@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Performance Dashboard | April 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #f472b6;
+            --success: #34d399;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-trend {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .trend-up { color: var(--success); }
+
+        /* Charts Layout */
+        .charts-main {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            height: 450px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+
+        .chart-container {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            min-height: 0; /* Important for flexbox and chart.js */
+        }
+
+        /* Data Table */
+        .table-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1rem 2rem;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        td {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9375rem;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .post-caption {
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .type-pill {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-image { background: rgba(56, 189, 248, 0.1); color: var(--primary); }
+        .type-doc { background: rgba(129, 140, 248, 0.1); color: var(--secondary); }
+        .type-text { background: rgba(244, 114, 182, 0.1); color: var(--accent); }
+
+        .btn-view {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .btn-view:hover {
+            text-decoration: underline;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="animate">
+            <div>
+                <h1>LinkedIn Analytics</h1>
+                <p>Performance summary for April 2026</p>
+            </div>
+            <div class="badge">April 1, 2026 - April 30, 2026</div>
+        </header>
+
+        <div class="stats-grid animate delay-1">
+            <div class="stat-card">
+                <div class="stat-label">Total Reach</div>
+                <div class="stat-value" id="total-impressions">0</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 12.4% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Engagements</div>
+                <div class="stat-value" id="total-engagements">0</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 8.2% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg. Engagement Rate</div>
+                <div class="stat-value" id="avg-rate">0%</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 0.5% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Posts</div>
+                <div class="stat-value" id="total-posts">0</div>
+                <div class="stat-trend">
+                    <span>•</span> Consistency high
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-main animate delay-2">
+            <div class="chart-card">
+                <h3>Daily Reach (Impressions)</h3>
+                <div class="chart-container">
+                    <canvas id="reachChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Engagement Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="engagementChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card animate delay-3" style="margin-bottom: 2rem;">
+            <h3>Performance by Content Type</h3>
+            <div class="chart-container">
+                <canvas id="typeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="table-card animate delay-3">
+            <div class="table-header">
+                <h3>Top Performing Posts</h3>
+            </div>
+            <div class="table-container">
+                <table id="posts-table">
+                    <thead>
+                        <tr>
+                            <th>POST</th>
+                            <th>TYPE</th>
+                            <th>IMPRESSIONS</th>
+                            <th>REACTIONS</th>
+                            <th>ENGAGEMENT</th>
+                            <th>LINK</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script id="csv-data" type="text/csv">
+Caption,Type,Impressions,Reactions,Comments,Shares,Engagement Rate,Publish Date,Link
+,DOCUMENT,158961,917,78,6,0.006297142,30-04-2026 10:42,https://www.linkedin.com/feed/update/urn:li:activity:7455484152910569472
+"I have a mentee who has been figuring out what he wants to do for 4 years.","IMAGE, TEXT",112090,5426,378,160,0.053207244,29-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7455103597140410368
+"Every team member at wariCrew who completes 5 years gets a fully paid 1-month stay (plus travel) at the Network School.","IMAGE, TEXT",239905,1972,149,7,0.008870178,29-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7455103586226606081
+"5 questions to ask yourself when you're afraid of what others will say.","IMAGE, TEXT",70111,2868,202,51,0.044515126,28-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7454862005582102528
+"In my 20 years of professional life, I have changed my career 5 times.","IMAGE, TEXT",273439,13051,469,301,0.050545094,28-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7454741205311143936
+"I never set out to discover these opportunities.","DOCUMENT, TEXT",149725,643,118,4,0.005109367,27-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7454499702785351680
+"I went from earning ₹9/hour to earning ₹2 lakh/hour in my 40s.","IMAGE, TEXT",91010,3500,330,75,0.042907373,27-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7454378801154904064
+"Question of the week (don't Google or ask AI!): Which is the tallest mountain of India?",TEXT,44540,158,66,0,0.005029187,26-04-2026 12:30,https://www.linkedin.com/feed/update/urn:li:activity:7454061727010295808
+"Everyone talks about finding a mentor. But how do you find the right one?","IMAGE, TEXT",129391,5854,232,159,0.048264562,25-04-2026 12:30,https://www.linkedin.com/feed/update/urn:li:activity:7453699341422211072
+"The most powerful moment in building a startup aren’t the wins.","IMAGE, TEXT",71140,2308,156,63,0.035521507,24-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7453412489725165568
+"Culture isn't what you say in meetings or write on your website. It is what people experience every day.","DOCUMENT, TEXT",198483,1283,228,17,0.007698392,24-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7453291658978152448
+"My wife, Ruchi, went from earning ₹20 lakhs a year to ₹20,000 a month. By choice.","IMAGE, TEXT",201701,2627,265,21,0.014442169,23-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7452929267170168834
+"Every team member at wariCrew gets a ₹72,000 wellness reimbursement every year.","IMAGE, TEXT",101226,2007,258,13,0.0225041,22-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7452566880873193472
+"5 career risks that are safer than the safe choice.","IMAGE, TEXT",97793,3777,227,91,0.041874163,21-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7452325292724912129
+"Something strange happens as your parents grow older. vacation in Japan.","IMAGE, TEXT",320835,9851,448,89,0.032378014,21-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7452204490264580096
+"Spend less. Save more. Don’t waste it. Conditioned for less.","DOCUMENT, TEXT",138067,857,169,24,0.007605003,20-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7451962889898434560
+"Our driver, Dayanand Bhaiya, now earns ₹53,350 a month.","IMAGE, TEXT",307930,2873,235,6,0.010112688,20-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7451842102172254208
+"What's the most common surname in India?",TEXT,81860,186,130,1,0.003872465,19-04-2026 12:30,https://www.linkedin.com/feed/update/urn:li:activity:7451525009933791232
+"Don't wait for your reality to change your words. Change your words to change your reality.","IMAGE, TEXT",420944,9589,283,298,0.024159983,18-04-2026 12:30,https://www.linkedin.com/feed/update/urn:li:activity:7451162626224504833
+"We sponsored an IIM MBA for one of our team members at wariCrew.","IMAGE, TEXT",156663,2096,127,8,0.014240759,17-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7450875767552446464
+"16.3 crores in revenue. 4 crores in profit. Bootstrapped business.","DOCUMENT, TEXT",122155,638,155,3,0.006516311,17-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7450754943470465024
+"I know someone who found out that their colleague joined at a higher salary. Speaking up.","IMAGE, TEXT",60470,1851,284,36,0.0359021,16-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7450392552295530496
+"Please don't call me Sir. Respect seniority vs experience.","IMAGE, TEXT",147654,2763,207,35,0.020351633,15-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7450151001606610944
+"There have been over 71,000 tech layoffs in 2026. Warning signs.","IMAGE, TEXT",99880,747,219,12,0.00979175,15-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7450030168087367680
+"IIT JEE results in 1998. Life is not over. Trust yourself.","IMAGE, TEXT",135705,6200,345,100,0.048966508,14-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7449667818565844993
+"5 books that gave me the highest return on investment in my career.","DOCUMENT, TEXT",229618,1342,111,47,0.006532589,13-04-2026 17:30,https://www.linkedin.com/feed/update/urn:li:activity:7449426188131016704
+"It took us 41 months to hit 1 million views on YouTube. Consistency.","IMAGE, TEXT",294578,7648,437,205,0.028141952,13-04-2026 09:30,https://www.linkedin.com/feed/update/urn:li:activity:7449305373380984832
+"Nobody talks about how lonely ambition can feel.","IMAGE, TEXT",51315,762,292,17,0.02087109,10-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7448210671739056128
+"I love my team wariCrew","DOCUMENT, TEXT",370015,2073,132,25,0.006026783,09-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7447848284653715456
+"5 questions that will change how you think about your career.","IMAGE, TEXT",81758,793,150,6,0.011607427,08-04-2026 15:00,https://www.linkedin.com/feed/update/urn:li:activity:7447576499844673536
+"Rest is not a reward. Condition for being productive.","IMAGE, TEXT",144350,5460,331,153,0.041177693,07-04-2026 15:00,https://www.linkedin.com/feed/update/urn:li:activity:7447214107621163008
+"7 career mistakes I see smart people make.","DOCUMENT",225718,781,139,25,0.00418664,06-04-2026 15:47,https://www.linkedin.com/feed/update/urn:li:activity:7446863758003654656
+"Anxiety makes us feel late for a race that doesn't exist.","TEXT",476071,1666,191,13,0.003927986,05-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7446398731324895232
+"Start date doesn't matter. Start does.","TEXT",85853,900,193,2,0.012754359,03-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7445673955379765248
+"The goal isn't to be liked. It's to be remembered for something real.","IMAGE, TEXT",85286,2880,285,57,0.037778768,02-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7445311569783345152
+"7 signs you're growing - even when it doesn't feel like it.","IMAGE, TEXT",203864,1798,236,33,0.010139112,01-04-2026 15:00,https://www.linkedin.com/feed/update/urn:li:activity:7445039779299127296
+"I love my team wariCrew","DOCUMENT, TEXT",117384,684,76,4,0.006508553,01-04-2026 09:00,https://www.linkedin.com/feed/update/urn:li:activity:7444949166708932609
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csvContent = document.getElementById('csv-data').textContent.trim();
+            
+            Papa.parse(csvContent, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    processDashboard(data);
+                }
+            });
+        });
+
+        function processDashboard(data) {
+            // Sort by date
+            data.sort((a, b) => {
+                const dateA = parseDate(a['Publish Date']);
+                const dateB = parseDate(b['Publish Date']);
+                return dateA - dateB;
+            });
+
+            // Key Stats
+            const totalImpressions = data.reduce((sum, row) => sum + (row.Impressions || 0), 0);
+            const totalReactions = data.reduce((sum, row) => sum + (row.Reactions || 0), 0);
+            const totalComments = data.reduce((sum, row) => sum + (row.Comments || 0), 0);
+            const totalShares = data.reduce((sum, row) => sum + (row.Shares || 0), 0);
+            const totalEngagements = totalReactions + totalComments + totalShares;
+            const avgRate = (data.reduce((sum, row) => sum + (row['Engagement Rate'] || 0), 0) / data.length) * 100;
+
+            document.getElementById('total-impressions').textContent = totalImpressions.toLocaleString();
+            document.getElementById('total-engagements').textContent = totalEngagements.toLocaleString();
+            document.getElementById('avg-rate').textContent = avgRate.toFixed(2) + '%';
+            document.getElementById('total-posts').textContent = data.length;
+
+            // Reach Chart
+            const reachCtx = document.getElementById('reachChart').getContext('2d');
+            new Chart(reachCtx, {
+                type: 'line',
+                data: {
+                    labels: data.map(row => row['Publish Date'].split(' ')[0]),
+                    datasets: [{
+                        label: 'Impressions',
+                        data: data.map(row => row.Impressions),
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#38bdf8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 100,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+
+            // Engagement Breakdown
+            const engCtx = document.getElementById('engagementChart').getContext('2d');
+            new Chart(engCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Reactions', 'Comments', 'Shares'],
+                    datasets: [{
+                        data: [totalReactions, totalComments, totalShares],
+                        backgroundColor: ['#38bdf8', '#818cf8', '#f472b6'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 100,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#f8fafc', padding: 20 }
+                        }
+                    }
+                }
+            });
+
+            // Type Performance
+            const typeMetrics = {};
+            data.forEach(row => {
+                const type = (row.Type || 'Unknown').split(',')[0].trim();
+                if (!typeMetrics[type]) {
+                    typeMetrics[type] = { impressions: 0, count: 0 };
+                }
+                typeMetrics[type].impressions += row.Impressions;
+                typeMetrics[type].count += 1;
+            });
+
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            new Chart(typeCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(typeMetrics),
+                    datasets: [{
+                        label: 'Avg. Reach per Post',
+                        data: Object.values(typeMetrics).map(m => m.impressions / m.count),
+                        backgroundColor: 'rgba(129, 140, 248, 0.6)',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 100,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { display: false }, ticks: { color: '#f8fafc' } }
+                    }
+                }
+            });
+
+            // Table Body
+            const tableBody = document.getElementById('table-body');
+            const sortedPosts = [...data].sort((a, b) => b.Impressions - a.Impressions).slice(0, 10);
+            
+            sortedPosts.forEach(post => {
+                const tr = document.createElement('tr');
+                const mainType = (post.Type || 'TEXT').split(',')[0].trim();
+                const typeClass = mainType.includes('IMAGE') ? 'type-image' : 
+                                 mainType.includes('DOC') ? 'type-doc' : 'type-text';
+                
+                tr.innerHTML = `
+                    <td><div class="post-caption" title="${post.Caption || 'Untitled'}">${post.Caption || 'Video/Doc Post'}</div></td>
+                    <td><span class="type-pill ${typeClass}">${mainType}</span></td>
+                    <td><strong>${post.Impressions.toLocaleString()}</strong></td>
+                    <td>${post.Reactions.toLocaleString()}</td>
+                    <td>${(post['Engagement Rate'] * 100).toFixed(2)}%</td>
+                    <td><a href="${post.Link}" target="_blank" class="btn-view">View →</a></td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return new Date();
+            const [datePart, timePart] = dateStr.split(' ');
+            const [day, month, year] = datePart.split('-');
+            return new Date(`${year}-${month}-${day}T${timePart || '00:00'}`);
+        }
+    </script>
+</body>
+</html>
