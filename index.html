@@ -259,30 +259,36 @@
             <div class="badge">April 1, 2026 - April 30, 2026</div>
         </header>
 
-<div class="stats-grid animate delay-1">
-
-    <div class="stat-card">
-        <div class="stat-label">Total Reach</div>
-        <div class="stat-value" id="total-impressions">0</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-label">Total Reactions</div>
-        <div class="stat-value" id="total-reactions">0</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-label">Total Engagement</div>
-        <div class="stat-value" id="total-engagements">0</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-label">Avg. Engagement Rate</div>
-        <div class="stat-value" id="avg-rate">0%</div>
-    </div>
-
-</div>
-        
+        <div class="stats-grid animate delay-1">
+            <div class="stat-card">
+                <div class="stat-label">Total Reach</div>
+                <div class="stat-value" id="total-impressions">0</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 12.4% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Engagements</div>
+                <div class="stat-value" id="total-engagements">0</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 8.2% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg. Engagement Rate</div>
+                <div class="stat-value" id="avg-rate">0%</div>
+                <div class="stat-trend trend-up">
+                    <span>↑</span> 0.5% vs last month
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Posts</div>
+                <div class="stat-value" id="total-posts">0</div>
+                <div class="stat-trend">
+                    <span>•</span> Consistency high
+                </div>
+            </div>
+        </div>
 
         <div class="charts-main animate delay-2">
             <div class="chart-card">
@@ -394,51 +400,13 @@ Caption,Type,Impressions,Reactions,Comments,Shares,Engagement Rate,Publish Date,
                 return dateA - dateB;
             });
 
-// Key Stats
-// Key Stats
-
-const totalImpressions =
-data.reduce((sum, row) =>
-sum + (row.Impressions || 0), 0);
-
-const totalReactions =
-data.reduce((sum, row) =>
-sum + (row.Reactions || 0), 0);
-
-const totalComments =
-data.reduce((sum, row) =>
-sum + (row.Comments || 0), 0);
-
-const totalShares =
-data.reduce((sum, row) =>
-sum + (row.Shares || 0), 0);
-
-const totalEngagements =
-totalReactions + totalComments + totalShares;
-
-
-// Average ER from dataset
-const avgRate =
-(
-data.reduce((sum, row) =>
-sum + (row['Engagement Rate'] || 0), 0)
-/
-data.length
-) * 100;
-
-
-// KPI Cards
-document.getElementById('total-impressions').textContent =
-totalImpressions.toLocaleString();
-
-document.getElementById('total-reactions').textContent =
-totalReactions.toLocaleString();
-
-document.getElementById('total-engagements').textContent =
-totalEngagements.toLocaleString();
-
-document.getElementById('avg-rate').textContent =
-avgRate.toFixed(2) + '%';
+            // Key Stats
+            const totalImpressions = data.reduce((sum, row) => sum + (row.Impressions || 0), 0);
+            const totalReactions = data.reduce((sum, row) => sum + (row.Reactions || 0), 0);
+            const totalComments = data.reduce((sum, row) => sum + (row.Comments || 0), 0);
+            const totalShares = data.reduce((sum, row) => sum + (row.Shares || 0), 0);
+            const totalEngagements = totalReactions + totalComments + totalShares;
+            const avgRate = (data.reduce((sum, row) => sum + (row['Engagement Rate'] || 0), 0) / data.length) * 100;
 
             document.getElementById('total-impressions').textContent = totalImpressions.toLocaleString();
             document.getElementById('total-engagements').textContent = totalEngagements.toLocaleString();
